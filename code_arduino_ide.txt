@@ -1,0 +1,103 @@
+#include <WiFi.h>
+#include "DHT.h"
+#include <ascon.h>
+
+// -------- WiFi credentials --------
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASSWORD";
+
+// -------- Server configuration --------
+const char* serverIP = "192.168.1.100"; // Node-RED IP
+const int serverPort = 1880;            // Node-RED HTTP port
+
+// -------- DHT configuration --------
+#define DHTPIN 27
+#define DHTTYPE DHT22
+DHT dht(DHTPIN, DHTTYPE);
+
+// -------- ASCON Security --------
+// 128-bit pre-shared key
+uint8_t ascon_key[16] = {
+  0x01,0x02,0x03,0x04,
+  0x05,0x06,0x07,0x08,
+  0x09,0x0A,0x0B,0x0C,
+  0x0D,0x0E,0x0F,0x10
+};
+
+// Unique nonce (must never repeat with same key)
+uint8_t nonce[16];
+
+WiFiClient client;
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi connected");
+}
+
+void loop() {
+  float temperature = dht.readTemperature();
+  float humidity = dht.readHumidity();
+
+  if (isnan(temperature) || isnan(humidity)) {
+    Serial.println("DHT read failed");
+    delay(2000);
+    return;
+  }
+
+  // -------- Plaintext payload --------
+  char plaintext[64];
+  sprintf(plaintext, "T=%.2f,H=%.2f", temperature, humidity);
+
+  // -------- Generate nonce --------
+  for (int i = 0; i < 16; i++) {
+    nonce[i] = random(0, 255);
+  }
+
+  // -------- Encryption buffers --------
+  uint8_t ciphertext[128];
+  uint8_t tag[16];
+  size_t ciphertext_len;
+
+  // -------- ASCON encryption (AEAD) --------
+  ascon_aead_encrypt(
+    ciphertext,
+    &ciphertext_len,
+    (uint8_t*)plaintext,
+    strlen(plaintext),
+    NULL,
+    0,
+    nonce,
+    ascon_key,
+    tag
+  );
+
+  // -------- Send to server --------
+  if (client.connect(serverIP, serverPort)) {
+    client.println("POST /sensor HTTP/1.1");
+    client.println("Host: node-red");
+    client.println("Content-Type: application/octet-stream");
+    client.println("Connection: close");
+    client.println("Content-Length: " + String(ciphertext_len + 32));
+    client.println();
+
+    client.write(nonce, 16);       // nonce
+    client.write(tag, 16);         // authentication tag
+    client.write(ciphertext, ciphertext_len);
+
+    client.stop();
+    Serial.println("Encrypted data sent");
+  } else {
+    Serial.println("Server connection failed");
+  }
+
+  delay(5000);
+}
