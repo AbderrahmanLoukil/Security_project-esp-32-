@@ -1,0 +1,19 @@
+{
+  "name": "aa",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "ascon": "^0.0.1",
+    "ascon-js": "^1.0.4",
+    "body-parser": "^2.2.1",
+    "express": "^5.2.1"
+  }
+}
