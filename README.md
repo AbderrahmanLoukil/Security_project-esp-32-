@@ -1,4 +1,5 @@
 # ESP32 DHT22 Sensor with ASCON Encryption
+By Abderrahman Loukil and Mohamed Abdelhak Ben Youssef
 
 ESP32 reads temperature & humidity from a DHT22 sensor, encrypts it using **ASCON-128 AEAD**, and sends it via Wi-Fi to a Node.js server. The server decrypts and displays the readings, demonstrating lightweight end-to-end encryption for IoT sensor data.
 
