@@ -10,14 +10,15 @@ ESP32 reads temperature & humidity from a DHT22 sensor, encrypts it using **ASCO
 - Node.js server decrypts and displays sensor readings
 
 ## Folder Structure
+```text
 ESP32_ASCON_Project/
 ├── ESP32_Code/
-│ └── DHT_ASCON.ino # ESP32 Arduino sketch
+│   └── DHT_ASCON.ino
 ├── NodeServer/
-│ ├── server.js # Node.js server for decryption
-│ └── package.json
-├── README.md
-
+│   ├── server.js
+│   └── package.json
+└── README.md
+```
 
 ## How to Run
 
